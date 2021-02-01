@@ -1,0 +1,135 @@
+     1                                  segment .data
+     2 00000000 F50F0100                	ran_a	dd	69621
+     3 00000004 FFFFFF7F                	ran_m	dd	7fffffffh
+     4 00000008 FFFFFFFF                	seed	dd	-1
+     5 0000000C 0A                      	eol	db	0xa
+     6 0000000D 20                          space   db 20h
+     7                                  segment .bss
+     8 00000000 <res 0000000A>          	array	resb	10
+     9                                  segment .text
+    10                                  global _start
+    11                                  _output_eol:
+    12 00000000 B804000000                  mov	eax,	4
+    13 00000005 BB01000000              	mov	ebx,	1
+    14 0000000A B9[0C000000]            	mov	ecx,	eol
+    15 0000000F BA01000000              	mov	edx,	1
+    16 00000014 CD80                    	int 80h
+    17 00000016 C3                      ret
+    18                                  _lprint: ;recursive subprogram for output the text
+    19                                  section .data
+    20 0000000E 00000000                	number	dd	0
+    21                                  section .text
+    22 00000017 83F800                  	cmp	eax,	0
+    23 0000001A 7429                    	je	.p_exit
+    24 0000001C F7F3                    	div	ebx
+    25 0000001E 83C230                  	add	edx,	48
+    26 00000021 52                      	push	edx
+    27 00000022 31D2                    	xor	edx,	edx
+    28 00000024 E8EEFFFFFF              	call	_lprint
+    29 00000029 8F05[0E000000]          	pop	dword [number]
+    30 0000002F B9[0E000000]            	mov	ecx,	number
+    31 00000034 B804000000              	mov	eax,	4
+    32 00000039 BB01000000              	mov	ebx,	1
+    33 0000003E BA01000000              	mov	edx,	1
+    34 00000043 CD80                    	int 80h
+    35                                  .p_exit:
+    36 00000045 C3                      	ret
+    37                                  _print: ; subprogram for output the dec numbers
+    38 00000046 31C0                    	xor	eax,	eax
+    39 00000048 31D2                        xor edx,    edx
+    40 0000004A 8A07                    	mov	al,	byte [edi]
+    41 0000004C 83F800                  	cmp	eax,	0
+    42 0000004F 740C                    	je	.write_zero
+    43 00000051 BB0A000000              	mov	ebx,	0xA
+    44 00000056 E8BCFFFFFF              	call _lprint
+    45 0000005B EB19                    	jmp	.exit
+    46                                  .write_zero:
+    47 0000005D 800730                  	add byte    [edi], 48
+    48 00000060 B804000000                  mov	eax,	4
+    49 00000065 BB01000000              	mov	ebx,	1
+    50 0000006A 89F9                    	mov	ecx,	edi
+    51 0000006C BA01000000              	mov	edx,	1
+    52 00000071 CD80                    	int 80h
+    53 00000073 802F30                      sub byte    [edi],48
+    54                                  .exit:
+    55 00000076 B804000000              	mov	eax,	4
+    56 0000007B BB01000000              	mov	ebx,	1
+    57 00000080 B9[0D000000]            	mov	ecx,	space
+    58 00000085 BA01000000              	mov	edx,	1
+    59 0000008A CD80                    	int 80h
+    60 0000008C C3                      	ret
+    61                                  _rand_n:
+    62 0000008D B80D000000              	mov eax, 0x0D ;sys_time
+    63 00000092 BB00000000              	mov ebx, 0x0 ;deskriptor
+    64 00000097 CD80                    	int	80h ;system abort
+    65 00000099 A3[08000000]            	mov	dword [seed],	eax
+    66 0000009E C3                      	ret
+    67                                  _rand:
+    68 0000009F 52                      	push	edx
+    69 000000A0 A1[08000000]            	mov	eax,	dword [seed]
+    70 000000A5 F725[00000000]          	mul	dword [ran_a]
+    71 000000AB F735[04000000]          	div	dword [ran_m]
+    72 000000B1 89D0                    	mov	eax,	edx
+    73 000000B3 8915[08000000]          	mov	dword [seed], edx
+    74 000000B9 5A                      	pop	edx
+    75 000000BA C3                      	ret
+    76                                  _buble_sort: ;subprogram for buble sort of numbers' array
+    77 000000BB 60                          pushad
+    78 000000BC 31C0                        xor eax,    eax
+    79 000000BE 31C9                        xor ecx,    ecx
+    80 000000C0 FC                          cld
+    81 000000C1 BA0A000000                  mov edx,    10
+    82 000000C6 6683FA01                    cmp dx, 1
+    83 000000CA 761D                        jbe .sort_exit
+    84 000000CC 4A                          dec edx
+    85                                  .sn_loop1:
+    86 000000CD 89D1                        mov ecx, edx
+    87 000000CF 31DB                        xor ebx,    ebx
+    88 000000D1 BE[00000000]                mov esi,    array
+    89                                  .sn_loop2:
+    90 000000D6 AC                          lodsb
+    91 000000D7 3A06                        cmp al, byte [esi]
+    92 000000D9 7606                        jbe .no_swap
+    93 000000DB 8606                        xchg    al, byte [esi]
+    94 000000DD 8846FF                      mov byte [esi-1],   al
+    95 000000E0 43                          inc ebx
+    96                                  .no_swap:
+    97 000000E1 E2F3                        loop    .sn_loop2
+    98 000000E3 6683FB00                    cmp bx, 0
+    99 000000E7 75E4                        jne .sn_loop1
+   100                                  .sort_exit:
+   101 000000E9 61                          popad
+   102 000000EA C3                          ret
+   103                                  _start:
+   104 000000EB B90A000000              	mov	ecx,	10
+   105 000000F0 E898FFFFFF              	call	_rand_n
+   106 000000F5 BF[00000000]            	mov	edi,	array
+   107                                  .cikl:
+   108 000000FA E8A0FFFFFF              	call	_rand
+   109 000000FF 8807                    	mov	byte [edi],	al
+   110 00000101 31C0                    	xor	eax,	eax
+   111 00000103 51                      	push	ecx
+   112 00000104 E83DFFFFFF              	call	_print
+   113 00000109 59                      	pop	ecx	
+   114 0000010A 47                      	inc edi
+   115 0000010B E2ED                    	loop	.cikl
+   116                                  	
+   117 0000010D E8EEFEFFFF                  call _output_eol
+   118                                      
+   119                                          ;sort the array by buble
+   120                                      
+   121 00000112 E8A4FFFFFF                  call    _buble_sort
+   122 00000117 31C9                        xor ecx,    ecx
+   123 00000119 B90A000000                  mov ecx,    10
+   124 0000011E BF[00000000]                mov edi,    array
+   125                                  .cikl_2:
+   126 00000123 51                          push    ecx
+   127 00000124 E81DFFFFFF                  call _print
+   128 00000129 59                          pop ecx
+   129 0000012A 47                          inc edi
+   130 0000012B E2F6                        loop    .cikl_2
+   131                                  		;exit from program
+   132 0000012D E8CEFEFFFF                  call    _output_eol    
+   133 00000132 B801000000              	mov eax, 1
+   134 00000137 BB00000000              	mov ebx, 0
+   135 0000013C CD80                    	int 80h	
